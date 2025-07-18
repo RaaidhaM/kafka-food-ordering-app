@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "Payment",
+  "namespace": "com.rmowlana.avroschemaandregistry.dto",
+  "fields": [
+    { "name": "orderId", "type": "string" },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "PaymentStatus",
+        "symbols": ["PAYMENT_SUCCESS", "PAYMENT_FAILED"]
+      }
+    }
+  ]
+}

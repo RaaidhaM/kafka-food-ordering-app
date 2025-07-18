@@ -1,0 +1,10 @@
+{
+  "type": "record",
+  "name": "Inventory",
+  "namespace": "com.rmowlana.avroschemaandregistry.dto",
+  "fields": [
+    { "name": "orderId", "type": "string" },
+    { "name": "productId", "type": "string" },
+    { "name": "status", "type": { "type": "enum", "name": "InventoryStatus", "symbols": ["IN_STOCK", "OUT_OF_STOCK"] } }
+  ]
+}

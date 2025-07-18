@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "name": "Kitchen",
+  "namespace": "com.rmowlana.avroschemaandregistry.dto",
+  "fields": [
+    { "name": "orderId", "type": "string" },
+    { "name": "status", "type": { "type": "enum", "name": "KitchenStatus", "symbols": ["PREPARING", "READY"] } }
+  ]
+}
