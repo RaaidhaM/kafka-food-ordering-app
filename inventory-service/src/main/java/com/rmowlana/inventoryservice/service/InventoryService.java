@@ -2,11 +2,16 @@ package com.rmowlana.inventoryservice.service;
 
 import com.rmowlana.avroschemaandregistry.dto.Inventory;
 import com.rmowlana.avroschemaandregistry.dto.InventoryStatus;
+import org.springframework.messaging.handler.annotation.Header;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Service;
 import com.rmowlana.avroschemaandregistry.dto.Order;
 
@@ -38,6 +43,12 @@ public class InventoryService {
         log.info("Inventory Status Updated: " + inventory.getStatus() + " for Order ID: " + inventory.getOrderId());
     }
 
+    // This enables the retry mechanism for the Kafka listener - 3 attempts with a backoff strategy
+    @RetryableTopic(
+            attempts = "3",
+            backoff = @Backoff(delay = 3000, multiplier = 1.5, maxDelay = 15000),
+            exclude = {NullPointerException.class}
+    )
     @KafkaListener(topics = "${order.topic.name}", groupId = "inventory-group")
     public void handleOrder (Order order) {
         log.info("Inventory Service Received The Order");
@@ -64,6 +75,21 @@ public class InventoryService {
         }
         // Publish inventory status to topic
         publishInventoryStatus(inventoryStatus);
+    }
+
+
+    // This method is triggered when a message fails all retry attempts.
+    // The failed messages are moved to a dead letter topic (DLT) for further investigation.
+    @DltHandler //this enables dlt logic for our kafka topic
+    public void listenDLT(Order order,
+                          @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                          @Header(KafkaHeaders.OFFSET) long offset) {
+        log.info("Inventory Service DLT: Failed to process Order ID {}, from topic: {}, offset: {}",
+                order.getOrderId(), topic, offset);
+        // Additional recovery logic could be implemented here:
+        // - Send notifications to support team
+        // - Store failed orders in a database for manual review
+        // - Attempt alternative processing strategies
     }
 
 
